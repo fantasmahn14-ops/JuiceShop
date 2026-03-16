@@ -50,23 +50,41 @@ jobs:
     needs: dependency_check
 
     steps:
-      - name: Crear carpeta ZAP
-        run: mkdir -p reports/zap
-
       - name: Run ZAP Baseline
         uses: zaproxy/action-baseline@v0.12.0
         with:
           target: 'https://tusitio.com'
           fail_action: false
-          cmd_options: '-a -r reports/zap/zap-report.html -w reports/zap/zap-report.md -J reports/zap/zap-report.json'
+          cmd_options: '-a -r report_html.html -w report_md.md -J report_json.json'
 
       - name: Ver archivos generados por ZAP
         if: always()
         run: |
-          echo "Contenido de reports:"
-          ls -R reports || true
+          echo "Root:"
+          ls -la
+          echo "Buscar reportes:"
+          find . -maxdepth 2 -type f | sort
 
-      - name: Subir reporte ZAP
+      - name: Subir reporte ZAP HTML
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-html-report
+          path: report_html.html
+
+      - name: Subir reporte ZAP Markdown
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-md-report
+          path: report_md.md
+
+      - name: Subir reporte ZAP JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-json-report
+          path: report_json.json
         if: always()
         uses: actions/upload-artifact@v4
         with:
