@@ -35,14 +35,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install bandit
 
-      - name: Crear carpeta de reportes
+      - name: Crear carpeta de reportes Bandit
         run: mkdir -p reports/bandit
 
       - name: Ejecutar Bandit
         run: |
-          bandit -r . \
-            -f txt \
-            -o reports/bandit/bandit-report.txt || true
+          bandit -r . -f txt -o reports/bandit/bandit-report.txt || true
 
       - name: Ver archivos generados por Bandit
         if: always()
@@ -56,6 +54,7 @@ jobs:
         with:
           name: bandit-report
           path: reports/bandit
+          if-no-files-found: error
 
   dependency_check:
     name: SCA - OWASP Dependency-Check
@@ -65,7 +64,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Crear carpeta de reportes
+      - name: Crear carpeta de reportes Dependency-Check
         run: mkdir -p reports/dependency-check
 
       - name: Ejecutar Dependency-Check
@@ -88,6 +87,7 @@ jobs:
         with:
           name: dependency-check-report
           path: reports/dependency-check
+          if-no-files-found: error
 
   zap_baseline:
     name: DAST - OWASP ZAP Baseline
@@ -103,17 +103,19 @@ jobs:
       - name: Ejecutar ZAP Baseline
         uses: zaproxy/action-baseline@v0.12.0
         with:
-          target: 'https://juice-shop.herokuapp.com/'
+          target: 'https://tusitio.com'
           fail_action: false
           cmd_options: '-a -r report_html.html -w report_md.md -J report_json.json'
 
       - name: Ver archivos generados por ZAP
         if: always()
         run: |
-          echo "Directorio actual:"
+          echo "PWD:"
+          pwd
+          echo "Contenido actual:"
           ls -la
           echo "Buscar reportes:"
-          find . -maxdepth 2 -type f | sort
+          find . -maxdepth 3 -type f | sort | grep -Ei 'report|zap' || true
 
       - name: Subir reporte ZAP HTML
         if: always()
@@ -121,6 +123,7 @@ jobs:
         with:
           name: zap-html-report
           path: report_html.html
+          if-no-files-found: error
 
       - name: Subir reporte ZAP Markdown
         if: always()
@@ -128,6 +131,7 @@ jobs:
         with:
           name: zap-md-report
           path: report_md.md
+          if-no-files-found: error
 
       - name: Subir reporte ZAP JSON
         if: always()
@@ -135,3 +139,4 @@ jobs:
         with:
           name: zap-json-report
           path: report_json.json
+          if-no-files-found: error
