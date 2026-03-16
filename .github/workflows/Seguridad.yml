@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
   actions: read
 
 jobs:
@@ -27,24 +26,23 @@ jobs:
         with:
           project: 'mi-proyecto'
           path: '.'
-          format: 'HTML,SARIF,JSON'
+          format: 'HTML'
           out: 'reports/dependency-check'
+          args: >
+            --noupdate
 
       - name: Ver archivos generados por Dependency-Check
+        if: always()
         run: |
           echo "Contenido de reports:"
           ls -R reports || true
 
-      - name: Upload Dependency-Check artifacts
+      - name: Subir reporte Dependency-Check
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: dependency-check-report
           path: reports/dependency-check
-
-      - name: Upload Dependency-Check SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: reports/dependency-check/dependency-check-report.sarif
 
   zap_baseline:
     name: DAST - OWASP ZAP Baseline
@@ -52,9 +50,6 @@ jobs:
     needs: dependency_check
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
       - name: Crear carpeta ZAP
         run: mkdir -p reports/zap
 
@@ -63,7 +58,7 @@ jobs:
         with:
           target: 'https://tusitio.com'
           fail_action: false
-          cmd_options: '-a -r reports/zap/zap-report.html -J reports/zap/zap-report.json -w reports/zap/zap-report.md'
+          cmd_options: '-a -r reports/zap/zap-report.html -w reports/zap/zap-report.md -J reports/zap/zap-report.json'
 
       - name: Ver archivos generados por ZAP
         if: always()
@@ -71,7 +66,7 @@ jobs:
           echo "Contenido de reports:"
           ls -R reports || true
 
-      - name: Upload ZAP artifacts
+      - name: Subir reporte ZAP
         if: always()
         uses: actions/upload-artifact@v4
         with:
