@@ -1,0 +1,68 @@
+name: OWASP Security Pipeline
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * 1'   # Lunes 07:00 UTC
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  dependency_check:
+    name: SCA - OWASP Dependency-Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
+        id: depcheck
+        with:
+          project: 'mi-proyecto'
+          path: '.'
+          format: 'HTML,SARIF'
+          out: 'reports'
+          args: >
+            --enableRetired
+            --enableExperimental
+
+      - name: Upload Dependency-Check HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check-report
+          path: reports
+
+      - name: Upload Dependency-Check SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/dependency-check-report.sarif
+
+  zap_baseline:
+    name: DAST - OWASP ZAP Baseline
+    runs-on: ubuntu-latest
+    needs: dependency_check
+
+    steps:
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'https://juice-shop.herokuapp.com/'
+          fail_action: true
+          cmd_options: '-a'
+
+      - name: Upload ZAP report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: report_html.html
+          if-no-files-found: ignore
