@@ -103,7 +103,7 @@ jobs:
       - name: Ejecutar ZAP Baseline
         uses: zaproxy/action-baseline@v0.12.0
         with:
-          target: 'https://tusitio.com'
+          target: 'https://juice-shop.herokuapp.com/'
           fail_action: false
           cmd_options: '-a -r report_html.html -w report_md.md -J report_json.json'
 
